@@ -12,25 +12,22 @@
   Revision Trail:   (Date/Author/Description)
 
 ======================================================================*/
+package com.github.lenope1214.sample;
 
-import java.awt.*;
-import java.lang.*;
-import java.awt.event.*;
-import javax.swing.text.*;
 import javax.swing.*;
-import java.applet.Applet;
-import javax.swing.JApplet;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class mainApplet extends JApplet implements ActionListener
 {
-	
+
 	//Variables
 	boolean openMifare=false, openGetATR=false, openDevProg=false, openPolling=false, openOtherPICC=false;
 	boolean openActive=false, openPassive=false;
-	
+
 	//GUI Variables
     private JButton bDevProg, bGetATR, bMifare, bOtherPICC, bPolling, bP2P;
-	
+
 	static mainMifareProg mifare;
 	static GetATR getATR;
 	static DevProg devProg;
@@ -38,8 +35,8 @@ public class mainApplet extends JApplet implements ActionListener
 	static OtherPICC otherPICC;
 	static ActiveSample active;
 	static PassiveSample passive;
-	
-	public void init() 
+
+	public void init()
    	{
 		setSize(220,300);
 	    bMifare = new JButton();
@@ -88,23 +85,23 @@ public class mainApplet extends JApplet implements ActionListener
                 .addComponent(bP2P)
                 .addContainerGap(30, Short.MAX_VALUE))
         );
-        
+
         bMifare.addActionListener(this);
         bGetATR.addActionListener(this);
         bDevProg.addActionListener(this);
         bPolling.addActionListener(this);
         bOtherPICC.addActionListener(this);
         bP2P.addActionListener(this);
-   		
+
    	}
-	
-	public void actionPerformed(ActionEvent e) 
+
+	public void actionPerformed(ActionEvent e)
 	{
-		
+
 		if(bMifare == e.getSource())
 		{
 			closeFrames();
-			
+
 			if(openMifare == false)
 			{
 				mifare = new mainMifareProg();
@@ -113,20 +110,20 @@ public class mainApplet extends JApplet implements ActionListener
 			}
 			else
 			{
-			
+
 				mifare.dispose();
 				mifare = new mainMifareProg();
 				mifare.setVisible(true);
 				openMifare = true;
 			}
-			
+
 		}
-		
+
 		if(bGetATR == e.getSource())
 		{
-			
+
 			closeFrames();
-			
+
 			if(openGetATR == false)
 			{
 				getATR = new GetATR();
@@ -140,13 +137,13 @@ public class mainApplet extends JApplet implements ActionListener
 				getATR.setVisible(true);
 				openGetATR = true;
 			}
-			
+
 		}
-		
+
 		if(bDevProg == e.getSource())
 		{
 			closeFrames();
-			
+
 			if(openDevProg == false)
 			{
 				devProg = new DevProg();
@@ -160,13 +157,13 @@ public class mainApplet extends JApplet implements ActionListener
 				devProg.setVisible(true);
 				openDevProg = true;
 			}
-			
+
 		}
-		
+
 		if(bPolling == e.getSource())
 		{
 			closeFrames();
-			
+
 			if(openPolling == false)
 			{
 				polling = new Polling();
@@ -180,38 +177,38 @@ public class mainApplet extends JApplet implements ActionListener
 				polling.setVisible(true);
 				openPolling = true;
 			}
-			
+
 		}
-		
+
 		if(bOtherPICC == e.getSource())
 		{
 			closeFrames();
-			
+
 			if(openOtherPICC == false)
 			{
 				otherPICC = new OtherPICC();
-				otherPICC.setVisible(true);	
+				otherPICC.setVisible(true);
 				openOtherPICC = true;
 			}
 			else
 			{
 				otherPICC.dispose();
 				otherPICC = new OtherPICC();
-				otherPICC.setVisible(true);	
+				otherPICC.setVisible(true);
 				openOtherPICC = true;
 			}
-			
+
 		}
-		
+
 		if(bP2P == e.getSource())
 		{
 			closeFrames();
-			
+
 			if((openActive == false)&&(openPassive == false))
 			{
 				active = new ActiveSample();
 				passive = new PassiveSample();
-				active.setVisible(true);	
+				active.setVisible(true);
 				passive.setVisible(true);
 				openActive = true;
 				openPassive = true;
@@ -222,66 +219,66 @@ public class mainApplet extends JApplet implements ActionListener
 				passive.dispose();
 				active = new ActiveSample();
 				passive = new PassiveSample();
-				active.setVisible(true);	
+				active.setVisible(true);
 				passive.setVisible(true);
 				openActive = true;
 				openPassive = true;
 			}
-			
+
 		}
-		
+
 	}
-	
+
 	public void closeFrames()
 	{
-		
+
 		if(openMifare==true)
 		{
 			mifare.dispose();
 			openMifare = false;
 		}
-		
+
 		if(openGetATR==true)
 		{
 			getATR.dispose();
 			openGetATR = false;
 		}
-		
+
 		if(openDevProg==true)
 		{
 			devProg.dispose();
 			openDevProg = false;
 		}
-		
+
 		if(openPolling==true)
 		{
 			polling.dispose();
 			openPolling = false;
 		}
-		
+
 		if(openOtherPICC==true)
 		{
 			otherPICC.dispose();
 			openOtherPICC = false;
 		}
-		
+
 		if(openActive==true)
 		{
 			active.dispose();
 			openActive = false;
 		}
-		
+
 		if(openPassive==true)
 		{
 			passive.dispose();
 			openPassive = false;
 		}
-		
+
 	}
-	
+
 	public void start()
 	{
-	
+
 	}
-	
+
 }

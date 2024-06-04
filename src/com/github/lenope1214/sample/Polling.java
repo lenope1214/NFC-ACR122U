@@ -13,30 +13,29 @@
   Revision Trail:   (Date/Author/Description)
 
 ======================================================================*/
-
-import java.io.*;
-import java.awt.*;
-import java.awt.event.*;
+package com.github.lenope1214.sample;
 
 import javax.swing.*;
-import javax.swing.filechooser.*;
-import javax.swing.filechooser.FileFilter;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 
 public class Polling extends JFrame implements ActionListener{
 
 	//JPCSC Variables
 	int retCode, pollCase;
-	boolean connActive, detect, dualPoll; 
+	boolean connActive, detect, dualPoll;
 	Timer timer;
-	
+
 	//All variables that requires pass-by-reference calls to functions are
 	//declared as 'Array of int' with length 1
 	//Java does not process pass-by-ref to int-type variables, thus Array of int was used.
-	int [] ATRLen = new int[1]; 
-	int [] hContext = new int[1]; 
+	int [] ATRLen = new int[1];
+	int [] hContext = new int[1];
 	int [] cchReaders = new int[1];
 	int [] hCard = new int[1];
-	int [] PrefProtocols = new int[1]; 		
+	int [] PrefProtocols = new int[1];
 	int [] RecvLen = new int[1];
 	int SendLen = 0;
 	int [] nBytesRet =new int[1];
@@ -44,7 +43,7 @@ public class Polling extends JFrame implements ActionListener{
 	byte [] RecvBuff = new byte[262];
 	byte [] ATRVal = new byte[262];
 	byte [] szReaders = new byte[1024];
-	
+
 	//GUI Variables
     private JButton bClear, bStartPoll;
     private JButton bConn;
@@ -75,14 +74,14 @@ public class Polling extends JFrame implements ActionListener{
     private JTextField tStat2;
     private JTextField tStat3;
     private JTextField tStat4;
-    
+
     // End of variables declaration
-	
+
 	static JacspcscLoader jacs = new JacspcscLoader();
-    
+
 
     public Polling() {
-    	
+
     	this.setTitle("Polling");
         initComponents();
         initMenu();
@@ -124,13 +123,13 @@ public class Polling extends JFrame implements ActionListener{
 	        bReset = new JButton();
 	        bClear = new JButton();
 	        bQuit = new JButton();
-     
+
      lblReader.setText("Select Reader");
 
-		String[] rdrNameDef = {"Please select reader                   "};	
+		String[] rdrNameDef = {"Please select reader                   "};
 		cbReader = new JComboBox(rdrNameDef);
 		cbReader.setSelectedIndex(0);
-		
+
      bInit.setText("Initalize");
 
      bConn.setText("Connect");
@@ -364,8 +363,8 @@ public class Polling extends JFrame implements ActionListener{
              .addComponent(statusPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
              .addContainerGap())
      );
-		
-     bInit.addActionListener(this); 
+
+     bInit.addActionListener(this);
      bConn.addActionListener(this);
      bClear.addActionListener(this);
      bReset.addActionListener(this);
@@ -373,7 +372,7 @@ public class Polling extends JFrame implements ActionListener{
      bGetPoll.addActionListener(this);
      bSetPoll.addActionListener(this);
      bQuit.addActionListener(this);
-		
+
      bInit.setMnemonic(KeyEvent.VK_I);
      bConn.setMnemonic(KeyEvent.VK_C);
      bClear.setMnemonic(KeyEvent.VK_L);
@@ -381,100 +380,100 @@ public class Polling extends JFrame implements ActionListener{
      bGetPoll.setMnemonic(KeyEvent.VK_G);
      bSetPoll.setMnemonic(KeyEvent.VK_S);
      bQuit.setMnemonic(KeyEvent.VK_Q);
-        
+
     }
 
     public void actionPerformed(ActionEvent e) {
-    	
+
 		if(bInit == e.getSource())
 		{
-			
+
 			//1. Establish context and obtain hContext handle
 			retCode = jacs.jSCardEstablishContext(ACSModule.SCARD_SCOPE_USER, 0, 0, hContext);
-		    
+
 			if (retCode != ACSModule.SCARD_S_SUCCESS)
 		    {
-		    
+
 				mMsg.append("Calling SCardEstablishContext...FAILED\n");
 		      	displayOut(1, retCode, "");
-		      	
+
 		    }
-			
+
 			//2. List PC/SC card readers installed in the system
 			retCode = jacs.jSCardListReaders(hContext, 0, szReaders, cchReaders);
-      		
+
 			int offset = 0;
 			cbReader.removeAllItems();
-			
+
 			for (int i = 0; i < cchReaders[0]-1; i++)
 			{
-				
+
 			  	if (szReaders[i] == 0x00)
-			  	{			  		
-			  		
+			  	{
+
 			  		cbReader.addItem(new String(szReaders, offset, i - offset));
 			  		offset = i+1;
-			  		
+
 			  	}
 			}
-			
+
 			if (cbReader.getItemCount() == 0)
 				cbReader.addItem("No PC/SC reader detected");
-			    
+
 			cbReader.setSelectedIndex(0);
-		
-			
+
+
 			//Look for ACR122 and make it the default reader in the combobox
 			for (int i = 0; i < cchReaders[0]-1; i++)
 			{
-				
+
 				cbReader.setSelectedIndex(i);
-				
+
 				if (((String) cbReader.getSelectedItem()).lastIndexOf("ACR122")> -1)
 					break;
-				
+
 			}
-			
+
 			bConn.setEnabled(true);
 			bInit.setEnabled(false);
 			bReset.setEnabled(true);
-			
+
 		}
-		
+
 		//Connect button
 		if(bConn == e.getSource())
 		{
-			
+
 			if(connActive)
 			{
-				
+
 				retCode = jacs.jSCardDisconnect(hCard, ACSModule.SCARD_UNPOWER_CARD);
-				
+
 			}
-			
-			String rdrcon = (String)cbReader.getSelectedItem();  	      	      	
-		    
-		    retCode = jacs.jSCardConnect(hContext, 
-		    							rdrcon, 
+
+			String rdrcon = (String)cbReader.getSelectedItem();
+
+		    retCode = jacs.jSCardConnect(hContext,
+		    							rdrcon,
 		    							ACSModule.SCARD_SHARE_SHARED,
 		    							ACSModule.SCARD_PROTOCOL_T1 | ACSModule.SCARD_PROTOCOL_T0,
-		      							hCard, 
+		      							hCard,
 		      							PrefProtocols);
-		    
+
 		    if (retCode != ACSModule.SCARD_S_SUCCESS)
 		    {
 		      	displayOut(1, retCode, "");
 	    		connActive = false;
 	    		return;
-		    
-		    } 
-		    else 
-		    {	      	      
-		      	
-		    	displayOut(0, 0, "Successful connection to " + (String)cbReader.getSelectedItem());
-		      	
+
 		    }
-			
+		    else
+		    {
+
+		    	displayOut(0, 0, "Successful connection to " + (String)cbReader.getSelectedItem());
+
+		    }
+
 		    connActive=true;
 			cbOpt1.setEnabled(true);
 			cbOpt2.setEnabled(true);
@@ -491,27 +490,27 @@ public class Polling extends JFrame implements ActionListener{
 			rbOpt1.setSelected(true);
 
 		}
-		
+
 		//Clear button
 		if(bClear == e.getSource())
 		{
-			
+
 			mMsg.setText("");
-			
+
 		}
-		
+
 		//Reset Button
 		if(bReset==e.getSource())
 		{
-			
+
 			//disconnect
 			if (connActive){
-				
+
 				retCode = jacs.jSCardDisconnect(hCard, ACSModule.SCARD_UNPOWER_CARD);
 				connActive= false;
-			
+
 			}
-		    
+
 			//release context
 			retCode = jacs.jSCardReleaseContext(hContext);
 			//System.exit(0);
@@ -523,22 +522,22 @@ public class Polling extends JFrame implements ActionListener{
 			initMenu();
 			cbReader.removeAllItems();
 			cbReader.addItem("Please select reader                   ");
-			
+
 		}
-		
+
 		if(bQuit == e.getSource())
 		{
-			
+
 			this.dispose();
-			
+
 		}
-		
+
 		if(bStartPoll== e.getSource())
 		{
-			
+
 			if(detect)
 			{
-				
+
 				displayOut(0, 0, "Polling Stopped...");
 				bStartPoll.setText("Start Polling");
 				tStat2.setText("");
@@ -546,20 +545,20 @@ public class Polling extends JFrame implements ActionListener{
 				detect = false;
 				timer.stop();
 				return;
-				
+
 			}
-			
+
 			displayOut(0, 0, "Polling Started...");
 			bStartPoll.setText("End Polling");
 			detect = true;
 			timer = new Timer(250, pollTimer);
 			timer.start();
-			
+
 		}
-		
+
 		if(bGetPoll == e.getSource())
 		{
-			
+
 			String tmpStr="", tmpHex="";
 			//get PICC operating Parameters
 			clearBuffers();
@@ -568,157 +567,157 @@ public class Polling extends JFrame implements ActionListener{
 			SendBuff[2] = (byte)0x50;
 			SendBuff[3] = (byte)0x00;
 			SendBuff[4] = (byte)0x00;
-			
+
 			SendLen = 5;
 			RecvLen[0] = 2;
-			
+
 			retCode = transmit();
-			
+
 			if(retCode != ACSModule.SCARD_S_SUCCESS)
 				return;
-			
+
 			//prints the command sent
 			for(int i =0; i<SendLen; i++)
 			{
-				
+
 				tmpHex = Integer.toHexString(((Byte)SendBuff[i]).intValue() & 0xFF).toUpperCase();
-				
+
 				//For single character hex
-				if (tmpHex.length() == 1) 
+				if (tmpHex.length() == 1)
 					tmpHex = "0" + tmpHex;
-				
-				tmpStr += " " + tmpHex;  
-				
+
+				tmpStr += " " + tmpHex;
+
 			}
-			
+
 			displayOut(3, 0, tmpStr.trim());
-			
+
 			//interpret the return response
 			if((RecvBuff[0]& 0x80)!= 0)
 			{
-				
+
 				displayOut(3, 0, "Automatic Polling is enabled.");
 				cbOpt1.setSelected(true);
-				
+
 			}
 			else
 			{
-				
+
 				displayOut(3, 0, "Automatic Polling is disabled.");
 				cbOpt1.setSelected(false);
-				
+
 			}
-			
+
 			if((RecvBuff[0]& 0x40)!= 0)
 			{
-				
+
 				displayOut(3, 0, "Automatic ATS Generation is enabled.");
 				cbOpt2.setSelected(true);
-				
+
 			}
 			else
 			{
-				
+
 				displayOut(3, 0, "Automatic ATS Generation is disabled.");
 				cbOpt2.setSelected(false);
-				
+
 			}
-			
+
 			if((RecvBuff[0]& 0x20)!= 0)
 			{
-				
+
 				displayOut(3, 0, "250 ms.");
 				rbOpt1.setSelected(true);
-				
+
 			}
 			else
 			{
-				
+
 				displayOut(3, 0, "500 ms");
 				rbopt2.setSelected(false);
-				
+
 			}
-			
+
 			if((RecvBuff[0]& 0x10)!= 0)
 			{
-				
+
 				displayOut(3, 0, "Detect Felica 424K Card Enabled");
 				cbOpt7.setSelected(true);
-				
+
 			}
 			else
 			{
-				
+
 				displayOut(3, 0, "Detect Felica 424K Card Disabled");
 				cbOpt7.setSelected(false);
-				
+
 			}
-			
+
 			if((RecvBuff[0]& 0x08)!= 0)
 			{
-				
+
 				displayOut(3, 0, "Detect Felica 212K Card Enabled");
 				cbOpt6.setSelected(true);
-				
+
 			}
 			else
 			{
-				
+
 				displayOut(3, 0, "Detect Felica 212K Card Disabled");
 				cbOpt6.setSelected(false);
-				
+
 			}
-			
+
 			if((RecvBuff[0]& 0x04)!= 0)
 			{
-				
+
 				displayOut(3, 0, "Detect Topaz Card Enabled");
 				cbOpt5.setSelected(true);
-				
+
 			}
 			else
 			{
-				
+
 				displayOut(3, 0, "Detect Topaz Card Disabled");
 				cbOpt5.setSelected(false);
-				
+
 			}
-			
+
 			if((RecvBuff[0]& 0x02)!= 0)
 			{
-				
+
 				displayOut(3, 0, "Detect ISO 14443 type B Card Enabled");
 				cbOpt4.setSelected(true);
-				
+
 			}
 			else
 			{
-				
+
 				displayOut(3, 0, "Detect ISO 14443 Type B Card Disabled");
 				cbOpt4.setSelected(false);
-				
+
 			}
-			
+
 			if((RecvBuff[0]& 0x01)!= 0)
 			{
-				
+
 				displayOut(3, 0, "Detect ISO 14443 Type A Card Enabled");
 				cbOpt3.setSelected(true);
-				
+
 			}
 			else
 			{
-				
+
 				displayOut(3, 0, "Detect ISO 14443 Type A Card Disabled");
 				cbOpt3.setSelected(false);
-				
+
 			}
-			
+
 		}
 
 		if(bSetPoll == e.getSource())
 		{
-			
+
 			String tmpStr="", tmpHex="";
 			//set operating parameter
 			clearBuffers();
@@ -726,7 +725,7 @@ public class Polling extends JFrame implements ActionListener{
 			SendBuff[1] = (byte)0x00;
 			SendBuff[2] = (byte)0x51;
 			SendBuff[3] = (byte)0x00;
-			
+
 			if(cbOpt3.isSelected())
 			{
 				SendBuff[3] = (byte)(SendBuff[3] | 0x01);
@@ -734,7 +733,7 @@ public class Polling extends JFrame implements ActionListener{
 			}
 			else
 				displayOut(3, 0, "Detect ISO 14443 Type A Card Disabled");
-				
+
 			if(cbOpt4.isSelected())
 			{
 				SendBuff[3] = (byte)(SendBuff[3] | 0x02);
@@ -742,7 +741,7 @@ public class Polling extends JFrame implements ActionListener{
 			}
 			else
 				displayOut(3, 0, "Detect ISO 14443 Type B Card Disabled");
-			
+
 			if(cbOpt5.isSelected())
 			{
 				SendBuff[3] = (byte)(SendBuff[3] | 0x04);
@@ -750,7 +749,7 @@ public class Polling extends JFrame implements ActionListener{
 			}
 			else
 				displayOut(3, 0, "Detect Topaz Card Disabled");
-			
+
 			if(cbOpt6.isSelected())
 			{
 				SendBuff[3] = (byte)(SendBuff[3] | 0x08);
@@ -758,7 +757,7 @@ public class Polling extends JFrame implements ActionListener{
 			}
 			else
 				displayOut(3, 0, "Detect FeliCa 212K Card Disabled");
-			
+
 			if(cbOpt7.isSelected())
 			{
 				SendBuff[3] = (byte)(SendBuff[3] | 0x10);
@@ -766,7 +765,7 @@ public class Polling extends JFrame implements ActionListener{
 			}
 			else
 				displayOut(3, 0, "Detect FeliCa 424K Card Disabled");
-			
+
 			if(rbOpt1.isSelected())
 			{
 				SendBuff[3] = (byte)(SendBuff[3] | 0x20);
@@ -774,7 +773,7 @@ public class Polling extends JFrame implements ActionListener{
 			}
 			else
 				displayOut(3, 0, "Poll Interval is 500 ms.");
-			
+
 			if(cbOpt2.isSelected())
 			{
 				SendBuff[3] = (byte)(SendBuff[3] | 0x40);
@@ -782,7 +781,7 @@ public class Polling extends JFrame implements ActionListener{
 			}
 			else
 				displayOut(3, 0, "Automatic ATS Generation Disabled");
-			
+
 			if(cbOpt1.isSelected())
 			{
 				SendBuff[3] = (byte)(SendBuff[3] | 0x80);
@@ -790,68 +789,68 @@ public class Polling extends JFrame implements ActionListener{
 			}
 			else
 				displayOut(3, 0, "Automatic Polling Disabled");
-			
+
 			SendBuff[4] = (byte) 0x00;
-			
+
 			SendLen = 5;
 			RecvLen[0] = 1;
-			
+
 			//prints the command sent
 			for(int i =0; i<SendLen; i++)
 			{
-				
+
 				tmpHex = Integer.toHexString(((Byte)SendBuff[i]).intValue() & 0xFF).toUpperCase();
-				
+
 				//For single character hex
-				if (tmpHex.length() == 1) 
+				if (tmpHex.length() == 1)
 					tmpHex = "0" + tmpHex;
-				
-				tmpStr += " " + tmpHex;  
-				
+
+				tmpStr += " " + tmpHex;
+
 			}
-			
+
 			displayOut(2, 0, tmpStr);
-			
+
 			retCode = transmit();
 			if (retCode != ACSModule.SCARD_S_SUCCESS)
 				return;
-			
+
 			//prints the response recieved
 			tmpStr = "";
 			for(int i =0; i<RecvLen[0]; i++)
 			{
-				
+
 				tmpHex = Integer.toHexString(((Byte)RecvBuff[i]).intValue() & 0xFF).toUpperCase();
-				
+
 				//For single character hex
-				if (tmpHex.length() == 1) 
+				if (tmpHex.length() == 1)
 					tmpHex = "0" + tmpHex;
-				
-				tmpStr += " " + tmpHex;  
-				
+
+				tmpStr += " " + tmpHex;
+
 			}
-			
+
 			displayOut(3, 0, tmpStr.trim());
-			
+
 		}
     }
-    
+
 	//timer for automatic polling
 	ActionListener pollTimer = new ActionListener() {
 	      public void actionPerformed(ActionEvent evt) {
-		
+
 			//always use valid connections
 	    	retCode = callCardConnect(1);
-	    	
+
 	    	if(retCode != ACSModule.SCARD_S_SUCCESS)
 	    	{
-	    		
+
 	    		displayOut(6, 0, "No Card within Range.");
 	    		tStat2.setText("");
 	    		return;
-	    		
+
 	    	}
-	    	
+
 	    	if(checkCard())
 	    		displayOut(6, 0, "Card is detected");
 	    	else
@@ -861,73 +860,73 @@ public class Polling extends JFrame implements ActionListener{
 	    	}
 		}
 	};
-	
+
 	public boolean checkCard()
 	{
-		
+
 		int tmpWord;
 		//getATR and check card type
 		tmpWord = 32;
 		ATRLen[0] = tmpWord;
 		int[] state = new int[1];
 		int[] readerLen = new int[1];
-		
-		String rdrcon= (String)cbReader.getSelectedItem();  
-	    
+
+		String rdrcon= (String)cbReader.getSelectedItem();
+
 	    byte [] tmpReader	= rdrcon.getBytes();
 	    byte [] readerName	= new byte[rdrcon.length()+1];
-	      
+
 	      for (int i=0; i<rdrcon.length(); i++)
 	      	readerName[i] = tmpReader[i];
 	      readerName[rdrcon.length()] = 0; //set null terminator
-    
-	    retCode = jacs.jSCardStatus(hCard, 
-	    							tmpReader, 
-	    							readerLen, 
-	    							state, 
-	    							PrefProtocols, 
-	    							ATRVal, 
+
+	    retCode = jacs.jSCardStatus(hCard,
+	    							tmpReader,
+	    							readerLen,
+	    							state,
+	    							PrefProtocols,
+	    							ATRVal,
 	    							ATRLen);
-	    
+
 	    if(retCode!= ACSModule.SCARD_S_SUCCESS)
 		    return false;
 	   //JOptionPane.showMessageDialog(this, ATRVal[14]);
 	   interpretATR();
 	   return true;
-	    
-	   
+
+
 	}
-	
+
 	public void interpretATR()
 	{
-		
+
 		String RIDVal, cardName, tmpHex="";
 		cardName= "";
-		
+
 		// Interpret ATR and guess card
 	    // Mifare cards using ISO 14443 Part 3 Supplemental Document
 		if (ATRLen[0]>14){
-			
+
 			if (ATRVal[12] == 3)
 			{
 				switch(ATRVal[14])
 				{
-				
+
 				case 0x11: cardName = cardName + " Felica 212K"; break;
 				case 0x12: cardName = cardName + " Felica 424K"; break;
 				case 0x04: cardName = cardName + " Topaz"; break;
-				
+
 				}
 			}
-			
+
 			if (ATRVal[12] == 3)
-			{		
+			{
 				if(ATRVal[13] == 0)
 				{
-					
+
 						switch(ATRVal[14])
 						{
-						
+
 							case 0x01: cardName = cardName + " Mifare Standard 1K"; break;
 	                        case 0x02: cardName = cardName + " Mifare Standard 4K"; break;
 	                        case 0x03: cardName = cardName + " Mifare Ultra light"; break;
@@ -965,222 +964,222 @@ public class Polling extends JFrame implements ActionListener{
 	                        case 0x24: cardName = cardName + " LRI12";break;
 	                        case 0x25: cardName = cardName + " LRI128";break;
 	                        case 0x26: cardName = cardName + " Mifare Mini";break;
-						
+
 						}
-						
+
 					}
 					else
 					{
-						
+
 						if (ATRVal[13]==0xFF)
 						{
-							
+
 							switch(ATRVal[14])
 							{
-							
+
 								case 9: cardName = cardName + " Mifare Mini"; break;
-							
+
 							}
-							
+
 						}
-						
+
 					}
-					
+
 				}
-			
+
 			displayOut(5, 0, cardName);
 		}
-		
+
 		if(ATRLen[0] ==11)
 		{
-			
+
 			RIDVal = "";
-			
+
 			for(int i=4; i<10; i++)
 			{
 				tmpHex = Integer.toHexString(((Byte)ATRVal[i]).intValue() & 0xFF).toUpperCase();
-				
+
 				//For single character hex
-				if (tmpHex.length() == 1) 
+				if (tmpHex.length() == 1)
 					tmpHex = "0" + tmpHex;
-				
-				RIDVal +=  tmpHex;  
-				
-				
+
+				RIDVal +=  tmpHex;
+
+
 			}
-			
+
 			if (RIDVal.equals("067577810280"))
 			{
-				
+
 				displayOut(5, 0, "Mifare DESFire");
-				
+
 			}
-			
+
 		}
-		
+
 		if(ATRLen[0] ==17)
 		{
-			
+
 			RIDVal = "";
-			
+
 			for(int i=4; i<16; i++)
 			{
-				
+
 				tmpHex = Integer.toHexString(((Byte)ATRVal[i]).intValue() & 0xFF).toUpperCase();
-				
+
 				//For single character hex
-				if (tmpHex.length() == 1) 
+				if (tmpHex.length() == 1)
 					tmpHex = "0" + tmpHex;
-				
-				RIDVal +=  tmpHex;  
-				
+
+				RIDVal +=  tmpHex;
+
 			}
-			
+
 			if (RIDVal.equals("50122345561253544E3381C3"))
 			{
-				
+
 				displayOut(5, 0, "ST19XRC8E");
-				
+
 			}
-			
+
 		}
-		
+
 	}
 
 	public int callCardConnect(int reqType)
 	{
-		
+
 		if (connActive)
 			retCode = jacs.jSCardDisconnect(hCard, ACSModule.SCARD_UNPOWER_CARD);
-		
+
 		//shared connection
 		String rdrcon = (String)cbReader.getSelectedItem();
-		retCode = jacs.jSCardConnect(hContext, 
-									 rdrcon, 
-									 ACSModule.SCARD_SHARE_SHARED, 
-									 ACSModule.SCARD_PROTOCOL_T0 | ACSModule.SCARD_PROTOCOL_T1, 
-									 hCard, 
+		retCode = jacs.jSCardConnect(hContext,
+									 rdrcon,
+									 ACSModule.SCARD_SHARE_SHARED,
+									 ACSModule.SCARD_PROTOCOL_T0 | ACSModule.SCARD_PROTOCOL_T1,
+									 hCard,
 									 PrefProtocols);
-		
+
 		if((retCode == ACSModule.SCARD_S_SUCCESS)&& (reqType != 1))
 		{
 
 			displayOut(0, 0, "Successful connection to " + (String)cbReader.getSelectedItem());
 			return retCode;
-			
+
 		}
 		return retCode;
 	}
-	
+
 	public int transmit()
 	{
-		
-		ACSModule.SCARD_IO_REQUEST IO_REQ = new ACSModule.SCARD_IO_REQUEST(); 
-		ACSModule.SCARD_IO_REQUEST IO_REQ_Recv = new ACSModule.SCARD_IO_REQUEST(); 
+
+		ACSModule.SCARD_IO_REQUEST IO_REQ = new ACSModule.SCARD_IO_REQUEST();
+		ACSModule.SCARD_IO_REQUEST IO_REQ_Recv = new ACSModule.SCARD_IO_REQUEST();
 		IO_REQ.dwProtocol = PrefProtocols[0];
 		IO_REQ.cbPciLength = 8;
 		IO_REQ_Recv.dwProtocol = PrefProtocols[0];
 		IO_REQ_Recv.cbPciLength = 8;
 		RecvLen[0] = 262;
-		
+
 		String tmpStr, tmpHex="";
 		tmpStr = "";
-		
+
 		for(int i=0; i<SendLen; i++)
 		{
 			tmpHex = Integer.toHexString(((Byte)SendBuff[i]).intValue() & 0xFF).toUpperCase();
-			
+
 			//For single character hex
-			if (tmpHex.length() == 1) 
+			if (tmpHex.length() == 1)
 				tmpHex = "0" + tmpHex;
-			
-			tmpStr += " " + tmpHex;  
-			
+
+			tmpStr += " " + tmpHex;
+
 		}
-		
+
 		displayOut(2, 0, tmpStr);
-		
-		retCode = jacs.jSCardTransmit(hCard, 
-				 					  IO_REQ, 
-				 					  SendBuff, 
-				 					  SendLen, 
-				 					  null, 
-				 					  RecvBuff, 
+
+		retCode = jacs.jSCardTransmit(hCard,
+				 					  IO_REQ,
+				 					  SendBuff,
+				 					  SendLen,
+				 					  null,
+				 					  RecvBuff,
 				 					  RecvLen);
-		
+
 		if (retCode != ACSModule.SCARD_S_SUCCESS)
 		{
-			
+
 			displayOut(1, retCode, "");
-			
+
 		}
 		else
 		{
-			
+
 			tmpStr = "";
-			
+
 			for(int i =0; i<RecvLen[0]; i++)
 			{
-				
+
 				tmpHex = Integer.toHexString(((Byte)RecvBuff[i]).intValue() & 0xFF).toUpperCase();
-				
+
 				//For single character hex
-				if (tmpHex.length() == 1) 
+				if (tmpHex.length() == 1)
 					tmpHex = "0" + tmpHex;
-				
-				tmpStr += " " + tmpHex;  
-				
+
+				tmpStr += " " + tmpHex;
+
 			}
-			
+
 			displayOut(3, 0, tmpStr.trim());
 		}
-		
+
 		return retCode;
-		
+
 	}
-	
+
 	public void clearBuffers()
 	{
-		
+
 		for(int i=0; i<262; i++)
 		{
-			
+
 			SendBuff[i]=(byte) 0x00;
 			RecvBuff[i]= (byte) 0x00;
-			
+
 		}
-		
+
 	}
-	
+
 	public void displayOut(int mType, int msgCode, String printText)
 	{
 
 		switch(mType)
 		{
-		
-			case 1: 
+
+			case 1:
 				{
-					
+
 					mMsg.append("! " + printText);
 					mMsg.append(ACSModule.GetScardErrMsg(msgCode) + "\n");
 					break;
-					
+
 				}
 			case 2: mMsg.append("< " + printText + "\n");break;
 			case 3: mMsg.append("> " + printText + "\n");break;
 			case 5: tStat2.setText(printText);break;
 			case 6: tStat4.setText(printText);break;
 			default: mMsg.append("- " + printText + "\n");
-		
-		}
-		
-	}
-	
 
-	
+		}
+
+	}
+
+
+
 	public void initMenu()
 	{
-	
+
 		connActive = false;
 		displayOut(0, 0, "Program Ready");
 		bConn.setEnabled(false);
@@ -1200,13 +1199,13 @@ public class Polling extends JFrame implements ActionListener{
 		bGetPoll.setEnabled(false);
 		bSetPoll.setEnabled(false);
 		bStartPoll.setEnabled(false);
-		
+
 	}
-	
 
-	
 
-    
+
+
+
     public static void main(String args[]) {
         EventQueue.invokeLater(new Runnable() {
             public void run() {

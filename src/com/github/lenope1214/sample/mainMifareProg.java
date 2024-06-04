@@ -13,31 +13,32 @@
   Revision Trail:   (Date/Author/Description)
 
 ======================================================================*/
+package com.github.lenope1214.sample;
 
-import java.io.*;
-import java.awt.*;
-import java.awt.event.*;
 import javax.swing.*;
-import javax.swing.filechooser.*;
-import javax.swing.filechooser.FileFilter;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 
 public class mainMifareProg extends JFrame implements ActionListener, KeyListener{
 
 	//JPCSC Variables
 	int retCode;
-	boolean connActive, validATS; 
+	boolean connActive, validATS;
 	static String VALIDCHARS = "0123456789";
 	static String VALIDCHARSHEX = "ABCDEFabcdef0123456789";
 	Timer timer;
-	
+
 	//All variables that requires pass-by-reference calls to functions are
 	//declared as 'Array of int' with length 1
 	//Java does not process pass-by-ref to int-type variables, thus Array of int was used.
-	int [] ATRLen = new int[1]; 
-	int [] hContext = new int[1]; 
+	int [] ATRLen = new int[1];
+	int [] hContext = new int[1];
 	int [] cchReaders = new int[1];
 	int [] hCard = new int[1];
-	int [] PrefProtocols = new int[1]; 		
+	int [] PrefProtocols = new int[1];
 	int [] RecvLen = new int[1];
 	int SendLen = 0;
 	int [] nBytesRet =new int[1];
@@ -46,7 +47,7 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
 	byte [] szReaders = new byte[1024];
 	int reqType;
 	ACSModule.SCARD_READERSTATE rdrState = new ACSModule.SCARD_READERSTATE();
-	
+
 	//GUI Variables
     private JButton bBinRead, bClear, bConn, bInit, bLoadKey, bReset, bValDec;
     private JButton bValInc, bValRead, bValRes, bValStore, bauth, bBinUpd, bQuit;
@@ -62,12 +63,12 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
     private JTextField tKey4, tKey5,tKey6, tKeyAdd, tMemAdd, tValAmt, tValBlk;
     private JTextField tValSrc, tValTar;
     private ButtonGroup bgKey;
-	
+
 	static JacspcscLoader jacs = new JacspcscLoader();
-    
+
 
     public mainMifareProg() {
-    	
+
     	this.setTitle("Mifare Card Programming");
         initComponents();
         initMenu();
@@ -135,13 +136,13 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
         bReset = new JButton();
         bQuit = new JButton();
         bgKey = new ButtonGroup();
-        
+
         lblReader.setText("Select Reader");
 
-		String[] rdrNameDef = {"Please select reader                   "};	
+		String[] rdrNameDef = {"Please select reader                   "};
 		cbReader = new JComboBox(rdrNameDef);
 		cbReader.setSelectedIndex(0);
-		
+
         lblReader.setText("Select Reader");
 
         cbReader.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Select reader" }));
@@ -544,7 +545,7 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
                 .addContainerGap(42, Short.MAX_VALUE))
         );
 
-        
+
         bInit.setMnemonic(KeyEvent.VK_I);
         bConn.setMnemonic(KeyEvent.VK_C);
         bReset.setMnemonic(KeyEvent.VK_R);
@@ -559,7 +560,7 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
         bValRead.setMnemonic(KeyEvent.VK_A);
         bValRes.setMnemonic(KeyEvent.VK_T);
         bQuit.setMnemonic(KeyEvent.VK_Q);
-        
+
         bInit.addActionListener(this);
         bConn.addActionListener(this);
         bReset.addActionListener(this);
@@ -574,7 +575,7 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
         bValRead.addActionListener(this);
         bValRes.addActionListener(this);
         bQuit.addActionListener(this);
-        
+
         tMemAdd.addKeyListener(this);
         tKey1.addKeyListener(this);
         tKey2.addKeyListener(this);
@@ -590,101 +591,101 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
         tValBlk.addKeyListener(this);
         tValSrc.addKeyListener(this);
         tValTar.addKeyListener(this);
-        
-        
+
+
     }
 
-	public void actionPerformed(ActionEvent e) 
+	public void actionPerformed(ActionEvent e)
 	{
-		
+
 		if(bInit == e.getSource())
 		{
-			
+
 			//1. Establish context and obtain hContext handle
 			retCode = jacs.jSCardEstablishContext(ACSModule.SCARD_SCOPE_USER, 0, 0, hContext);
-		    
+
 			if (retCode != ACSModule.SCARD_S_SUCCESS)
 		    {
-		    
+
 				mMsg.append("Calling SCardEstablishContext...FAILED\n");
 		      	displayOut(1, retCode, "");
-		      	
+
 		    }
-			
+
 			//2. List PC/SC card readers installed in the system
 			retCode = jacs.jSCardListReaders(hContext, 0, szReaders, cchReaders);
-      		
+
 			int offset = 0;
 			cbReader.removeAllItems();
-			
+
 			for (int i = 0; i < cchReaders[0]-1; i++)
 			{
-				
+
 			  	if (szReaders[i] == 0x00)
-			  	{			  		
-			  		
+			  	{
+
 			  		cbReader.addItem(new String(szReaders, offset, i - offset));
 			  		offset = i+1;
-			  		
+
 			  	}
 			}
-			
+
 			if (cbReader.getItemCount() == 0)
 				cbReader.addItem("No PC/SC reader detected");
-			    
+
 			cbReader.setSelectedIndex(0);
 			bConn.setEnabled(true);
 			bInit.setEnabled(false);
 			bReset.setEnabled(true);
-			
+
 			//Look for ACR122 and make it the default reader in the combobox
 			for (int i = 0; i < cchReaders[0]; i++)
 			{
-				
+
 				cbReader.setSelectedIndex(i);
-				
+
 				if (((String) cbReader.getSelectedItem()).lastIndexOf("ACR122")> -1)
 					break;
 				else
 					cbReader.setSelectedIndex(0);
-				
+
 			}
-			
+
 		}
-		
+
 		if(bConn == e.getSource())
 		{
-			
+
 			if(connActive)
 			{
-				
+
 				retCode = jacs.jSCardDisconnect(hCard, ACSModule.SCARD_UNPOWER_CARD);
-				
+
 			}
-			
-			String rdrcon = (String)cbReader.getSelectedItem();  	      	      	
-		    
-		    retCode = jacs.jSCardConnect(hContext, 
-		    							rdrcon, 
+
+			String rdrcon = (String)cbReader.getSelectedItem();
+
+		    retCode = jacs.jSCardConnect(hContext,
+		    							rdrcon,
 		    							ACSModule.SCARD_SHARE_SHARED,
 		    							ACSModule.SCARD_PROTOCOL_T1 | ACSModule.SCARD_PROTOCOL_T0,
-		      							hCard, 
+		      							hCard,
 		      							PrefProtocols);
-		    
+
 		    if (retCode != ACSModule.SCARD_S_SUCCESS)
 		    {
 		      	displayOut(1, retCode, "");
 	    		connActive = true;
 	    		return;
-		    
-		    } 
-		    else 
-		    {	      	      
-		      	
-		    	displayOut(0, 0, "Successful connection to " + (String)cbReader.getSelectedItem());
-		      	
+
 		    }
-			
+		    else
+		    {
+
+		    	displayOut(0, 0, "Successful connection to " + (String)cbReader.getSelectedItem());
+
+		    }
+
 		    connActive=true;
 			bLoadKey.setEnabled(true);
 			bauth.setEnabled(true);
@@ -714,118 +715,118 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
 			tValBlk.setEnabled(true);
 			tValTar.setEnabled(true);
 			rbKeyA.setSelected(true);
-			
+
 		}
-		
+
 		if(bClear == e.getSource())
 		{
-			
+
 			mMsg.setText("");
-			
+
 		}
-		
+
 		if(bReset==e.getSource())
 		{
-			
+
 			//disconnect
 			if (connActive){
-				
+
 				retCode = jacs.jSCardDisconnect(hCard, ACSModule.SCARD_UNPOWER_CARD);
 				connActive= false;
-			
+
 			}
-		    
+
 			//release context
 			retCode = jacs.jSCardReleaseContext(hContext);
 			//System.exit(0);
-			
+
 			mMsg.setText("");
 			initMenu();
 			cbReader.removeAllItems();
 			cbReader.addItem("Please select reader    ");
-			
-			
+
+
 		}
-		
+
 		if(bQuit == e.getSource())
 		{
-			
+
 			this.dispose();
-			
+
 		}
-		
+
 		if(bLoadKey==e.getSource())
 		{
 			String tmpStr="", tmpHex="";
 			//validate input
 			if(tMemAdd.getText().equals(""))
 			{
-				
+
 				tMemAdd.requestFocus();
 				return;
-				
+
 			}
 			else
 				if((((Integer)Integer.parseInt(tMemAdd.getText(), 16)).byteValue()!= 1)||(((Integer)Integer.parseInt(tMemAdd.getText(), 16)).byteValue()!= 0))
 				{
 					tMemAdd.setText("1");
-					
+
 				}
-			
+
 			if(tKey1.getText().equals(""))
 			{
 
 				tKey1.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(((Integer)Integer.parseInt(tKey1.getText(), 16)).byteValue()!=0xFF)
 				{
 					tKey1.setText("FF");
-					
+
 				}
-			
+
 			if(tKey2.getText().equals(""))
 			{
-	
+
 				tKey2.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(((Integer)Integer.parseInt(tKey2.getText(), 16)).byteValue()!=0xFF)
 				{
 					tKey2.setText("FF");
-					
+
 				}
-				
+
 			if(tKey3.getText().equals(""))
 			{
-	
+
 				tKey3.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(((Integer)Integer.parseInt(tKey3.getText(), 16)).byteValue()!=0xFF)
 				{
 					tKey3.setText("FF");
-					
+
 				}
 
 			if(tKey4.getText().equals(""))
 			{
-	
+
 				tKey4.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(((Integer)Integer.parseInt(tKey4.getText(), 16)).byteValue()!=0xFF)
 				{
 					tKey4.setText("FF");
-					
+
 				}
 
 			if(tKey5.getText().equals(""))
@@ -833,29 +834,29 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
 
 				tKey5.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(((Integer)Integer.parseInt(tKey5.getText(), 16)).byteValue()!=0xFF)
 				{
 					tKey5.setText("FF");
-					
+
 				}
-			
+
 			if(tKey6.getText().equals(""))
 			{
 
 				tKey6.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(((Integer)Integer.parseInt(tKey6.getText(), 16)).byteValue()!=0xFF)
 				{
 					tKey6.setText("FF");
-					
+
 				}
-			
+
 			clearBuffers();
 			SendBuff[0] = (byte)0xFF;
 			SendBuff[1] = (byte)0x82;
@@ -868,41 +869,41 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
 			SendBuff[8] = (byte)((Integer)Integer.parseInt(tKey4.getText(), 16)).byteValue();
 			SendBuff[9] = (byte)((Integer)Integer.parseInt(tKey5.getText(), 16)).byteValue();
 			SendBuff[10] = (byte)((Integer)Integer.parseInt(tKey6.getText(), 16)).byteValue();
-			
+
 			SendLen = 11;
 			RecvLen[0] = 2;
-			
+
 			retCode = sendAPDUandDisplay();
 			if(retCode!= ACSModule.SCARD_S_SUCCESS)
 				return;
 			else
 			{
-				
+
 				for(int i =RecvLen[0]-2; i<RecvLen[0]; i++)
 				{
-					
+
 					tmpHex = Integer.toHexString(((Byte)RecvBuff[i]).intValue() & 0xFF).toUpperCase();
-					
+
 					//For single character hex
-					if (tmpHex.length() == 1) 
+					if (tmpHex.length() == 1)
 						tmpHex = "0" + tmpHex;
-					
-					tmpStr += " " + tmpHex; 
-					
+
+					tmpStr += " " + tmpHex;
+
 				}
-				
+
 				//check for response
 				if(!tmpStr.trim().equals("90 00"))
 					displayOut(2, 0, "Load authentication keys error!");
-				
+
 			}
-			
+
 		}
-		
+
 		if(bauth == e.getSource())
 		{
 			String tmpStr="", tmpHex="";
-			
+
 			if(tBlkNo.getText().equals(""))
 			{
 				tBlkNo.requestFocus();
@@ -914,9 +915,9 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
 					tBlkNo.setText("319");
 					tBlkNo.requestFocus();
 					return;
-					
+
 				}
-				
+
 			if(tKeyAdd.getText().equals(""))
 			{
 				tKeyAdd.requestFocus();
@@ -928,9 +929,9 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
 					tKeyAdd.setText("1");
 					tKeyAdd.requestFocus();
 					return;
-						
-				}			
-			
+
+				}
+
 			clearBuffers();
 			//authentication command
 			SendBuff[0] = (byte)0xFF;
@@ -941,84 +942,84 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
 			SendBuff[5] = (byte)0x01;
 			SendBuff[6] = (byte)0x00;
 			SendBuff[7] = (byte)(Integer.parseInt(tBlkNo.getText()));
-			
+
 			if(rbKeyA.isSelected())
 				SendBuff[8] = (byte)0x60;
 			else
 				SendBuff[8] = (byte)0x61;
-			
+
 			SendBuff[9] = (byte)((Integer)Integer.parseInt(tKeyAdd.getText(), 16)).byteValue();
-			
+
 			SendLen = 10;
 			RecvLen[0] = 2;
-			
+
 			retCode = sendAPDUandDisplay();
 			if(retCode != ACSModule.SCARD_S_SUCCESS)
 				return;
 			else
 			{
-				
+
 				for(int i =RecvLen[0]-2; i<RecvLen[0]; i++)
 				{
-					
+
 					tmpHex = Integer.toHexString(((Byte)RecvBuff[i]).intValue() & 0xFF).toUpperCase();
-					
+
 					//For single character hex
-					if (tmpHex.length() == 1) 
+					if (tmpHex.length() == 1)
 						tmpHex = "0" + tmpHex;
-					
-					tmpStr += " " + tmpHex; 
-					
+
+					tmpStr += " " + tmpHex;
+
 				}
-				
+
 				//check for response
 				if(tmpStr.trim().equals("90 00"))
 					displayOut(2, 0, "Authentication Success");
 				else
 					displayOut(1, 0, "Authentication Failed");
-				
+
 			}
-			
-			
+
+
 		}
-		
+
 		if(bBinRead == e.getSource())
 		{
 			String tmpStr="", tmpHex="";
 			if(tBinBlk.getText().equals(""))
 			{
-				
+
 				tBinBlk.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(Integer.parseInt(tBinBlk.getText())>319)
 				{
-					
+
 					tBinBlk.setText("319");
 					tBinBlk.requestFocus();
 					return;
-					
+
 				}
-			
+
 			if(tBinLen.getText().equals(""))
 			{
-				
+
 				tBinLen.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(Integer.parseInt(tBinLen.getText())<16)
 				{
-					
+
 					tBinLen.setText("16");
 					tBinLen.requestFocus();
 					return;
-					
+
 				}
-			
+
 			clearBuffers();
 			//read binary block command
 			SendBuff[0] = (byte)0xFF;
@@ -1026,29 +1027,29 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
 			SendBuff[2] = (byte)0x00;
 			SendBuff[3] = (byte)((Integer)Integer.parseInt(tBinBlk.getText(), 16)).byteValue();
 			SendBuff[4] = (byte)(Integer.parseInt(tBinLen.getText()));
-			
+
 			SendLen = 5;
 			RecvLen[0] = Integer.parseInt(tBinLen.getText()) + 2;
-			
+
 			retCode = sendAPDUandDisplay();
 			if(retCode != ACSModule.SCARD_S_SUCCESS)
 				return;
 			else
 			{
-				
+
 				for(int i =RecvLen[0]-2; i<RecvLen[0]; i++)
 				{
-					
+
 					tmpHex = Integer.toHexString(((Byte)RecvBuff[i]).intValue() & 0xFF).toUpperCase();
-					
+
 					//For single character hex
-					if (tmpHex.length() == 1) 
+					if (tmpHex.length() == 1)
 						tmpHex = "0" + tmpHex;
-					
-					tmpStr += " " + tmpHex; 
-					
+
+					tmpStr += " " + tmpHex;
+
 				}
-				
+
 				//check for response
 				if(tmpStr.trim().equals("90 00"))
 				{
@@ -1058,63 +1059,63 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
 							tmpStr = tmpStr + " ";
 						else
 							tmpStr = tmpStr + (char)RecvBuff[i];
-						
+
 					tBinData.setText(tmpStr);
-					
+
 				}
 				else
 					displayOut(2, 0, "Read Block Error!");
-				
+
 			}
-			
+
 		}
-		
+
 		if(bBinUpd == e.getSource())
 		{
-			
+
 			String tmpStr="", tmpHex="";
 			if(tBinBlk.getText().equals(""))
 			{
-				
+
 				tBinBlk.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(Integer.parseInt(tBinBlk.getText())>319)
 				{
-					
+
 					tBinBlk.setText("319");
 					tBinBlk.requestFocus();
 					return;
-					
+
 				}
-			
+
 			if(tBinLen.getText().equals(""))
 			{
-				
+
 				tBinLen.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(Integer.parseInt(tBinLen.getText())>16)
 				{
-					
+
 					tBinLen.setText("16");
 					tBinLen.requestFocus();
 					return;
-					
+
 				}
-			
+
 			if((Integer.parseInt(tBinLen.getText()) > 0) && (tBinData.getText().equals("")))
 			{
-				
+
 				tBinData.requestFocus();
 				return;
-				
+
 			}
-			
+
 			clearBuffers();
 			//read binary block command
 			SendBuff[0] = (byte)0xFF;
@@ -1122,94 +1123,94 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
 			SendBuff[2] = (byte)0x00;
 			SendBuff[3] = (byte)((Integer)Integer.parseInt(tBinBlk.getText(), 16)).byteValue();
 			SendBuff[4] = (byte)(Integer.parseInt(tBinLen.getText()));
-			
+
 			for(int i=0; i<tBinData.getText().length(); i++)
 			{
 				SendBuff[i + 5] = (byte) (int)(tBinData.getText().charAt(i));
 			}
-			
+
 			SendLen = (Integer.parseInt(tBinLen.getText())) + 5;
 			RecvLen[0] = 2;
-			
+
 			retCode = sendAPDUandDisplay();
 			if(retCode != ACSModule.SCARD_S_SUCCESS)
 				return;
 			else
 			{
-				
+
 				for(int i =RecvLen[0]-2; i<RecvLen[0]; i++)
 				{
-					
+
 					tmpHex = Integer.toHexString(((Byte)RecvBuff[i]).intValue() & 0xFF).toUpperCase();
-					
+
 					//For single character hex
-					if (tmpHex.length() == 1) 
+					if (tmpHex.length() == 1)
 						tmpHex = "0" + tmpHex;
-					
-					tmpStr += " " + tmpHex; 
-					
+
+					tmpStr += " " + tmpHex;
+
 				}
-				
+
 				//check for response
 				if(tmpStr.trim().equals("90 00"))
 				{
-					
+
 					tBinData.setText("");
-					
+
 				}
 				else
 					displayOut(2, 0, "Update Block Error!");
-				
+
 			}
-			
+
 		}
-		
+
 		if(bValStore == e.getSource())
 		{
-			
+
 			int amt;
 			String tmpStr="", tmpHex="";
-			
+
 			if(tValBlk.getText().equals(""))
 			{
-				
+
 				tValBlk.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(Integer.parseInt(tValBlk.getText())>319)
 				{
-					
+
 					tValBlk.setText("319");
 					tValBlk.requestFocus();
 					return;
-					
+
 				}
-			
+
 			if(tValAmt.getText().equals(""))
 			{
-				
+
 				tValAmt.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(Integer.parseInt(tValAmt.getText())>2147483647)
 				{
-					
+
 					tValAmt.setText("2147483647");
 					tValAmt.requestFocus();
 					return;
-					
+
 				}
-			
+
 			tValSrc.setText("");
 			tValTar.setText("");
-			
+
 			amt = Integer.parseInt(tValAmt.getText());
 			clearBuffers();
-			
+
 			SendBuff[0] = (byte)0xFF;
 			SendBuff[1] = (byte)0xD7;
 			SendBuff[2] = (byte)0x00;
@@ -1220,83 +1221,83 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
 			SendBuff[7] = (byte) ((amt >> 16) & 0xFF);
 			SendBuff[8] = (byte) ((amt >> 8) & 0xFF);
 			SendBuff[9]=(byte)(amt & 0xFF);
-			
-			SendLen = 10; 
+
+			SendLen = 10;
 			RecvLen[0] = 2;
-			
+
 			retCode = sendAPDUandDisplay();
 			if(retCode != ACSModule.SCARD_S_SUCCESS)
 				return;
 			else
 			{
-				
+
 				for(int i =RecvLen[0]-2; i<RecvLen[0]; i++)
 				{
-					
+
 					tmpHex = Integer.toHexString(((Byte)RecvBuff[i]).intValue() & 0xFF).toUpperCase();
-					
+
 					//For single character hex
-					if (tmpHex.length() == 1) 
+					if (tmpHex.length() == 1)
 						tmpHex = "0" + tmpHex;
-					
-					tmpStr += " " + tmpHex; 
-					
+
+					tmpStr += " " + tmpHex;
+
 				}
-				
+
 				//check for response
 				if(!tmpStr.trim().equals("90 00"))
 					displayOut(2, 0, "Store Value Error!");
-				
+
 			}
-			
+
 		}
-		
+
 		if(bValInc == e.getSource())
 		{
-			
+
 			int amt;
 			String tmpStr="", tmpHex="";
-			
+
 			if(tValBlk.getText().equals(""))
 			{
-				
+
 				tValBlk.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(Integer.parseInt(tValBlk.getText())>319)
 				{
-					
+
 					tValBlk.setText("319");
 					tValBlk.requestFocus();
 					return;
-					
+
 				}
-			
+
 			if(tValAmt.getText().equals(""))
 			{
-				
+
 				tValAmt.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(Integer.parseInt(tValAmt.getText())>2147483647)
 				{
-					
+
 					tValAmt.setText("2147483647");
 					tValAmt.requestFocus();
 					return;
-					
+
 				}
-			
+
 			tValSrc.setText("");
 			tValTar.setText("");
-			
+
 			amt = Integer.parseInt(tValAmt.getText());
 			clearBuffers();
-			
+
 			SendBuff[0] = (byte)0xFF;
 			SendBuff[1] = (byte)0xD7;
 			SendBuff[2] = (byte)0x00;
@@ -1307,83 +1308,83 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
 			SendBuff[7] = (byte) ((amt >> 16) & 0xFF);
 			SendBuff[8] = (byte) ((amt >> 8) & 0xFF);
 			SendBuff[9]=(byte)(amt & 0xFF);
-			
-			SendLen = 10; 
+
+			SendLen = 10;
 			RecvLen[0] = 2;
-			
+
 			retCode = sendAPDUandDisplay();
 			if(retCode != ACSModule.SCARD_S_SUCCESS)
 				return;
 			else
 			{
-				
+
 				for(int i =RecvLen[0]-2; i<RecvLen[0]; i++)
 				{
-					
+
 					tmpHex = Integer.toHexString(((Byte)RecvBuff[i]).intValue() & 0xFF).toUpperCase();
-					
+
 					//For single character hex
-					if (tmpHex.length() == 1) 
+					if (tmpHex.length() == 1)
 						tmpHex = "0" + tmpHex;
-					
-					tmpStr += " " + tmpHex; 
-					
+
+					tmpStr += " " + tmpHex;
+
 				}
-				
+
 				//check for response
 				if(!tmpStr.trim().equals("90 00"))
 					displayOut(2, 0, "Increment Error!");
-				
+
 			}
-			
+
 		}
-		
+
 		if(bValDec == e.getSource())
 		{
-			
+
 			int amt;
 			String tmpStr="", tmpHex="";
-			
+
 			if(tValBlk.getText().equals(""))
 			{
-				
+
 				tValBlk.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(Integer.parseInt(tValBlk.getText())>319)
 				{
-					
+
 					tValBlk.setText("319");
 					tValBlk.requestFocus();
 					return;
-					
+
 				}
-			
+
 			if(tValAmt.getText().equals(""))
 			{
-				
+
 				tValAmt.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(Integer.parseInt(tValAmt.getText())>2147483647)
 				{
-					
+
 					tValAmt.setText("2147483647");
 					tValAmt.requestFocus();
 					return;
-					
+
 				}
-			
+
 			tValSrc.setText("");
 			tValTar.setText("");
-			
+
 			amt = Integer.parseInt(tValAmt.getText());
 			clearBuffers();
-			
+
 			SendBuff[0] = (byte)0xFF;
 			SendBuff[1] = (byte)0xD7;
 			SendBuff[2] = (byte)0x00;
@@ -1394,89 +1395,89 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
 			SendBuff[7] = (byte) ((amt >> 16) & 0xFF);
 			SendBuff[8] = (byte) ((amt >> 8) & 0xFF);
 			SendBuff[9]=(byte)(amt & 0xFF);
-			
-			SendLen = 10; 
+
+			SendLen = 10;
 			RecvLen[0] = 2;
-			
+
 			retCode = sendAPDUandDisplay();
 			if(retCode != ACSModule.SCARD_S_SUCCESS)
 				return;
 			else
 			{
-				
+
 				for(int i =RecvLen[0]-2; i<RecvLen[0]; i++)
 				{
-					
+
 					tmpHex = Integer.toHexString(((Byte)RecvBuff[i]).intValue() & 0xFF).toUpperCase();
-					
+
 					//For single character hex
-					if (tmpHex.length() == 1) 
+					if (tmpHex.length() == 1)
 						tmpHex = "0" + tmpHex;
-					
-					tmpStr += " " + tmpHex; 
-					
+
+					tmpStr += " " + tmpHex;
+
 				}
-				
+
 				//check for response
 				if(!tmpStr.trim().equals("90 00"))
 					displayOut(2, 0, "Decrement Error!");
-				
+
 			}
-			
+
 		}
-		
+
 		if(bValRead == e.getSource())
 		{
-			
+
 			int amt;
 			String tmpStr="", tmpHex="";
-			
+
 			if(tValBlk.getText().equals(""))
 			{
-				
+
 				tValBlk.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(Integer.parseInt(tValBlk.getText())>319)
 				{
-					
+
 					tValBlk.setText("319");
 					tValBlk.requestFocus();
 					return;
-					
+
 				}
-			
+
 			clearBuffers();
 			SendBuff[0] = (byte)0xFF;
 			SendBuff[1] = (byte)0xB1;
 			SendBuff[2] = (byte)0x00;
 			SendBuff[3] = (byte)(Integer.parseInt(tValBlk.getText()));
 			SendBuff[4] = (byte)0x04;
-			
+
 			SendLen = 5;
 			RecvLen[0] = 6;
-			
+
 			retCode = sendAPDUandDisplay();
 			if(retCode != ACSModule.SCARD_S_SUCCESS)
 				return;
 			else
 			{
-				
+
 				for(int i =RecvLen[0]-2; i<RecvLen[0]; i++)
 				{
-					
+
 					tmpHex = Integer.toHexString(((Byte)RecvBuff[i]).intValue() & 0xFF).toUpperCase();
-					
+
 					//For single character hex
-					if (tmpHex.length() == 1) 
+					if (tmpHex.length() == 1)
 						tmpHex = "0" + tmpHex;
-					
-					tmpStr += " " + tmpHex; 
-					
+
+					tmpStr += " " + tmpHex;
+
 				}
-				
+
 				//check for response
 				if(tmpStr.trim().equals("90 00"))
 				{
@@ -1485,57 +1486,57 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
 					amt = amt + ((RecvBuff[1]& 0xFF) * 256 * 256);
 					amt = amt + ((RecvBuff[0]& 0xFF) * 256 * 256 * 256);
 					tValAmt.setText(""+amt);
-					
+
 				}
 				else
 					displayOut(2, 0, "Read Value Error!");
-				
+
 			}
-			
+
 		}
-		
+
 		if(bValRes == e.getSource())
 		{
-			
+
 			String tmpStr="", tmpHex="";
-			
+
 			if(tValSrc.getText().equals(""))
 			{
-				
+
 				tValSrc.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(Integer.parseInt(tValSrc.getText())>319)
 				{
-					
+
 					tValSrc.setText("319");
 					tValSrc.requestFocus();
 					return;
-					
+
 				}
-			
+
 			if(tValTar.getText().equals(""))
 			{
-				
+
 				tValTar.requestFocus();
 				return;
-				
+
 			}
 			else
 				if(Integer.parseInt(tValTar.getText())>319)
 				{
-					
+
 					tValTar.setText("319");
 					tValTar.requestFocus();
 					return;
-					
+
 				}
-			
+
 			tValAmt.setText("");
 			tValBlk.setText("");
-			
+
 			clearBuffers();
 			SendBuff[0] = (byte) 0xFF;
 			SendBuff[1] = (byte) 0xD7;
@@ -1544,143 +1545,143 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
 			SendBuff[4] = (byte) 0x02;
 			SendBuff[5] = (byte) 0x03;
 			SendBuff[6] = (byte) (Integer.parseInt(tValTar.getText()));
-			
+
 			SendLen = 7;
 			RecvLen[0] = 2;
-			
+
 			retCode = sendAPDUandDisplay();
 			if(retCode != ACSModule.SCARD_S_SUCCESS)
 				return;
 			else
 			{
-				
+
 				for(int i =RecvLen[0]-2; i<RecvLen[0]; i++)
 				{
-					
+
 					tmpHex = Integer.toHexString(((Byte)RecvBuff[i]).intValue() & 0xFF).toUpperCase();
-					
+
 					//For single character hex
-					if (tmpHex.length() == 1) 
+					if (tmpHex.length() == 1)
 						tmpHex = "0" + tmpHex;
-					
-					tmpStr += " " + tmpHex; 
-					
+
+					tmpStr += " " + tmpHex;
+
 				}
-				
+
 				//check for response
 				if(!tmpStr.trim().equals("90 00"))
 					displayOut(2, 0, "Restore Value Error!");
-				
+
 			}
-			
+
 		}
-				
+
 	}
-    
+
 	public int sendAPDUandDisplay()
 	{
-		
-		ACSModule.SCARD_IO_REQUEST IO_REQ = new ACSModule.SCARD_IO_REQUEST(); 
-		ACSModule.SCARD_IO_REQUEST IO_REQ_Recv = new ACSModule.SCARD_IO_REQUEST(); 
+
+		ACSModule.SCARD_IO_REQUEST IO_REQ = new ACSModule.SCARD_IO_REQUEST();
+		ACSModule.SCARD_IO_REQUEST IO_REQ_Recv = new ACSModule.SCARD_IO_REQUEST();
 		IO_REQ.dwProtocol = PrefProtocols[0];
 		IO_REQ.cbPciLength = 8;
 		IO_REQ_Recv.dwProtocol = PrefProtocols[0];
 		IO_REQ_Recv.cbPciLength = 8;
-		
+
 		String tmpStr = "", tmpHex="";
-		
+
 		for(int i =0; i<SendLen; i++)
 		{
-			
+
 			tmpHex = Integer.toHexString(((Byte)SendBuff[i]).intValue() & 0xFF).toUpperCase();
 			//JOptionPane.showMessageDialog(this, SendBuff[4]);
 			//For single character hex
-			if (tmpHex.length() == 1) 
+			if (tmpHex.length() == 1)
 				tmpHex = "0" + tmpHex;
-			
-			tmpStr += " " + tmpHex;  
-			
+
+			tmpStr += " " + tmpHex;
+
 		}
-		
+
 		displayOut(2, 0, tmpStr);
-		
-		retCode = jacs.jSCardTransmit(hCard, 
-									 IO_REQ, 
-									 SendBuff, 
-									 SendLen, 
-									 null, 
-									 RecvBuff, 
+
+		retCode = jacs.jSCardTransmit(hCard,
+									 IO_REQ,
+									 SendBuff,
+									 SendLen,
+									 null,
+									 RecvBuff,
 									 RecvLen);
-				
+
 		if (retCode != ACSModule.SCARD_S_SUCCESS)
 		{
-			
+
 			displayOut(1, retCode, "");
 			return retCode;
-			
+
 		}
-	
+
 			tmpStr="";
-			
-			
+
+
 				for(int i =0; i<RecvLen[0]; i++)
 				{
-					
+
 					tmpHex = Integer.toHexString(((Byte)RecvBuff[i]).intValue() & 0xFF).toUpperCase();
-					
+
 					//For single character hex
-					if (tmpHex.length() == 1) 
+					if (tmpHex.length() == 1)
 						tmpHex = "0" + tmpHex;
-					
-					tmpStr += " " + tmpHex;  
-					
+
+					tmpStr += " " + tmpHex;
+
 				}
 
 		displayOut(4, 0, tmpStr);
 		return retCode;
 	}
-	
+
 	public void clearBuffers()
 	{
-		
+
 		for(int i=0; i<262; i++)
 		{
-			
+
 			SendBuff[i]=(byte) 0x00;
 			RecvBuff[i]= (byte) 0x00;
-			
+
 		}
-		
+
 	}
-	
+
 	public void displayOut(int mType, int msgCode, String printText)
 	{
 
 		switch(mType)
 		{
-		
-			case 1: 
+
+			case 1:
 				{
-					
+
 					mMsg.append("! " + printText);
 					mMsg.append(ACSModule.GetScardErrMsg(msgCode) + "\n");
 					break;
-					
+
 				}
 			case 2: mMsg.append("< " + printText + "\n");break;
 			case 3: mMsg.append("> " + printText + "\n");break;
 			default: mMsg.append("- " + printText + "\n");
-		
-		}
-		
-	}
-	
 
-	
+		}
+
+	}
+
+
+
 	public void initMenu()
 	{
-		
-		
+
+
 		connActive = false;
 		bConn.setEnabled(false);
 		bInit.setEnabled(true);
@@ -1730,81 +1731,81 @@ public class mainMifareProg extends JFrame implements ActionListener, KeyListene
 		tValTar.setText("");
 		mMsg.setText("");
 		displayOut(0, 0, "Program Ready");
-		
+
 	}
-	
+
 	public void keyReleased(KeyEvent ke) {
-		
+
 	}
-	
+
 	public void keyPressed(KeyEvent ke) {
   		//restrict paste actions
-		if (ke.getKeyCode() == KeyEvent.VK_V ) 
-			ke.setKeyCode(KeyEvent.VK_UNDO );						
+		if (ke.getKeyCode() == KeyEvent.VK_V )
+			ke.setKeyCode(KeyEvent.VK_UNDO );
   	}
-	
-	public void keyTyped(KeyEvent ke) 
-	{  		
+
+	public void keyTyped(KeyEvent ke)
+	{
   		Character x = (Character)ke.getKeyChar();
   		char empty = '\r';
-  		
+
 
   		//Check valid characters
   		if(tBlkNo.isFocusOwner() || tBinBlk.isFocusOwner() || tBinLen.isFocusOwner() || tValAmt.isFocusOwner() || tValSrc.isFocusOwner() || tValBlk.isFocusOwner() || tValTar.isFocusOwner())
-  		{	
-  		
-  			if (VALIDCHARS.indexOf(x) == -1 ) 
+  		{
+
+  			if (VALIDCHARS.indexOf(x) == -1 )
   				ke.setKeyChar(empty);
-  			
+
   		}
   		else
   		{
-  			
-  			if (VALIDCHARSHEX.indexOf(x) == -1 ) 
+
+  			if (VALIDCHARSHEX.indexOf(x) == -1 )
   				ke.setKeyChar(empty);
-  			
+
   		}
-  					  
+
 		//Limit character length
   		if(tBlkNo.isFocusOwner() || tBinBlk.isFocusOwner() || tValBlk.isFocusOwner() || tValSrc.isFocusOwner() || tValTar.isFocusOwner())
   		{
-  			
-  			if   (((JTextField)ke.getSource()).getText().length() >= 3 ) 
+
+  			if   (((JTextField)ke.getSource()).getText().length() >= 3 )
   			{
-		
-  				ke.setKeyChar(empty);	
+
+  				ke.setKeyChar(empty);
   				return;
-  				
+
   			}
-  			
+
   		}
   		else if(tValAmt.isFocusOwner())
   		{
-  			
-  			if   (((JTextField)ke.getSource()).getText().length() >= 10 ) 
+
+  			if   (((JTextField)ke.getSource()).getText().length() >= 10 )
   			{
-		
-  				ke.setKeyChar(empty);	
+
+  				ke.setKeyChar(empty);
   				return;
-  				
+
   			}
-  			
+
   		}
   		else
   		{
-  			
-  			if   (((JTextField)ke.getSource()).getText().length() >= 2 ) 
+
+  			if   (((JTextField)ke.getSource()).getText().length() >= 2 )
   			{
-		
-  				ke.setKeyChar(empty);	
+
+  				ke.setKeyChar(empty);
   				return;
-  				
+
   			}
-  			
+
   		}
-  	    	
+
 	}
-    
+
     public static void main(String args[]) {
         EventQueue.invokeLater(new Runnable() {
             public void run() {

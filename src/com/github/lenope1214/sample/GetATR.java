@@ -13,35 +13,34 @@
   Revision Trail:   (Date/Author/Description)
 
 ======================================================================*/
+package com.github.lenope1214.sample;
 
-import java.io.*;
-import java.awt.*;
-import java.awt.event.*;
 import javax.swing.*;
-import javax.swing.filechooser.*;
-import javax.swing.filechooser.FileFilter;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class GetATR extends JFrame implements ActionListener{
 
 	//JPCSC Variables
 	int retCode;
-	boolean connActive; 
-	
+	boolean connActive;
+
 	//All variables that requires pass-by-reference calls to functions are
 	//declared as 'Array of int' with length 1
 	//Java does not process pass-by-ref to int-type variables, thus Array of int was used.
-	int [] ATRLen = new int[1]; 
-	int [] hContext = new int[1]; 
+	int [] ATRLen = new int[1];
+	int [] hContext = new int[1];
 	int [] cchReaders = new int[1];
 	int [] hCard = new int[1];
-	int [] PrefProtocols = new int[1]; 		
+	int [] PrefProtocols = new int[1];
 	int RecvLen = 0;
 	int SendLen = 0;
 	byte [] SendBuff = new byte[300];
 	byte [] RecvBuff = new byte[300];
 	byte [] ATRVal = new byte[128];
 	byte [] szReaders = new byte[1024];
-	
+
 	//GUI Variables
 	private JButton bClear, bConn, bGetATR, bInit, bReset, bQuit;
     private JLabel lblReader;
@@ -50,10 +49,10 @@ public class GetATR extends JFrame implements ActionListener{
     private JScrollPane msgScrollPane;
     private JComboBox rdrName;
 	static JacspcscLoader jacs = new JacspcscLoader();
-    
+
 
     public GetATR() {
-    	
+
     	this.setTitle("Get ATR");
         initComponents();
         initMenu();
@@ -77,13 +76,13 @@ public class GetATR extends JFrame implements ActionListener{
         msgScrollPane = new JScrollPane();
         Msg = new JTextArea();
         bQuit = new JButton();
-        
+
         lblReader.setText("Select Reader");
 
-        String[] rdrNameDef = {"Please select reader                   "};	
+        String[] rdrNameDef = {"Please select reader                   "};
 		rdrName = new JComboBox(rdrNameDef);
 		rdrName.setSelectedIndex(0);
-		
+
         bInit.setText("Initialize");
 
         bConn.setText("Connect");
@@ -194,159 +193,159 @@ public class GetATR extends JFrame implements ActionListener{
                         .addComponent(menuPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap())
         );
-        
+
         bInit.addActionListener(this);
         bConn.addActionListener(this);
         bGetATR.addActionListener(this);
         bClear.addActionListener(this);
         bReset.addActionListener(this);
         bQuit.addActionListener(this);
-        
+
     }
 
     public void actionPerformed(ActionEvent e) {
-    	
-		if (bReset == e.getSource()) 
+
+		if (bReset == e.getSource())
 		{
-			
+
 			//disconnect
 			if (connActive){
-				
+
 				retCode = jacs.jSCardDisconnect(hCard, ACSModule.SCARD_UNPOWER_CARD);
 				connActive= false;
-			
+
 			}
-		    
+
 			//release context
 			retCode = jacs.jSCardReleaseContext(hContext);
 			//System.exit(0);
-			
+
 			Msg.setText("");
 			initMenu();
 			rdrName.removeAllItems();
 			rdrName.addItem("Please select reader                   ");
-			
+
 		}
-		
+
 		if(bInit == e.getSource())
 		{
-			
+
 			//1. Establish context and obtain hContext handle
 			retCode = jacs.jSCardEstablishContext(ACSModule.SCARD_SCOPE_USER, 0, 0, hContext);
-		    
+
 			if (retCode != ACSModule.SCARD_S_SUCCESS)
 		    {
-		    
+
 				Msg.append("Calling SCardEstablishContext...FAILED\n");
 		      	displayOut(1, retCode, "");
-		      	
+
 		    }
-			
+
 			//2. List PC/SC card readers installed in the system
 			retCode = jacs.jSCardListReaders(hContext, 0, szReaders, cchReaders);
 
 			int offset = 0;
 			rdrName.removeAllItems();
-			
+
 			for (int i = 0; i < cchReaders[0]-1; i++)
 			{
-				
+
 			  	if (szReaders[i] == 0x00)
-			  	{			  		
-			  		
+			  	{
+
 			  		rdrName.addItem(new String(szReaders, offset, i - offset));
 			  		offset = i+1;
-			  		
+
 			  	}
 			}
-			
+
 			if (rdrName.getItemCount() == 0)
 			{
-			
+
 				rdrName.addItem("No PC/SC reader detected");
-				
+
 			}
-			      	
+
 			rdrName.setSelectedIndex(0);
 			bConn.setEnabled(true);
 			bGetATR.setEnabled(true);
 			bInit.setEnabled(false);
 			bReset.setEnabled(true);
-			
-			
-		    
-			
+
+
+
+
 		}
-		
+
 		if(bConn == e.getSource())
 		{
-			
+
 			if(connActive)
 			{
-				
+
 				retCode = jacs.jSCardDisconnect(hCard, ACSModule.SCARD_UNPOWER_CARD);
-				
+
 			}
-			
-			String rdrcon = (String)rdrName.getSelectedItem();  	      	      	
-		    
-		    retCode = jacs.jSCardConnect(hContext, 
-		    							rdrcon, 
+
+			String rdrcon = (String)rdrName.getSelectedItem();
+
+		    retCode = jacs.jSCardConnect(hContext,
+		    							rdrcon,
 		    							ACSModule.SCARD_SHARE_SHARED,
 		    							ACSModule.SCARD_PROTOCOL_T1 | ACSModule.SCARD_PROTOCOL_T0,
-		      							hCard, 
+		      							hCard,
 		      							PrefProtocols);
-		    
+
 		    if (retCode != ACSModule.SCARD_S_SUCCESS)
 		    {
 		      	//check if ACR128 SAM is used and use Direct Mode if SAM is not detected
 		      	if (((String) rdrName.getSelectedItem()).lastIndexOf("ACR128U SAM")> -1)
 				{
-					
-		    		retCode = jacs.jSCardConnect(hContext, 
-		    									rdrcon, 
+
+		    		retCode = jacs.jSCardConnect(hContext,
+		    									rdrcon,
 		    									ACSModule.SCARD_SHARE_DIRECT,
 		    									0,
-		    									hCard, 
+		    									hCard,
 		    									PrefProtocols);
-		    		
+
 		    		if (retCode != ACSModule.SCARD_S_SUCCESS)
 				    {
-		    			
+
 		    			displayOut(1, retCode, "");
 		    			connActive = false;
 		    			return;
-		    			
+
 				    }
 		    		else
 		    		{
-		    			
+
 		    			displayOut(0, 0, "Successful connection to " + (String)rdrName.getSelectedItem());
-		    			
+
 		    		}
-					
+
 				}
 		      	else{
-		      		
+
 		      		displayOut(1, retCode, "");
 	    			connActive = false;
 	    			return;
-		      		
+
 		      	}
-		    
-		    } 
-		    else 
-		    {	      	      
-		      	
-		    	displayOut(0, 0, "Successful connection to " + (String)rdrName.getSelectedItem());
-		      	
+
 		    }
-			
+		    else
+		    {
+
+		    	displayOut(0, 0, "Successful connection to " + (String)rdrName.getSelectedItem());
+
+		    }
+
 		}
-		
+
 		if(bGetATR == e.getSource())
 		{
-		
+
 			int tmpWord;
 			int[] state = new int[1];
 			int[] readerLen = new int[1];
@@ -359,157 +358,157 @@ public class GetATR extends JFrame implements ActionListener{
 			readerLen[0]=0;
 			for(int i=0; i<128; i++)
 				ATRVal[i] = 0;
-			
+
 		    tmpWord = 32;
 		    ATRLen[0] = tmpWord;
-		    String rdrcon= (String)rdrName.getSelectedItem();  
-		    
+		    String rdrcon= (String)rdrName.getSelectedItem();
+
 		    byte [] tmpReader	= rdrcon.getBytes();
 		    byte [] readerName	= new byte[rdrcon.length()+1];
-		      
+
 		      for (int i=0; i<rdrcon.length(); i++)
 		      	readerName[i] = tmpReader[i];
 		      readerName[rdrcon.length()] = 0; //set null terminator
-	    
-		    retCode = jacs.jSCardStatus(hCard, 
-		    							tmpReader, 
-		    							readerLen, 
-		    							state, 
-		    							PrefProtocols, 
-		    							ATRVal, 
+
+		    retCode = jacs.jSCardStatus(hCard,
+		    							tmpReader,
+		    							readerLen,
+		    							state,
+		    							PrefProtocols,
+		    							ATRVal,
 		    							ATRLen);
-		    
-   
+
+
 		   // Msg.append(""+retCode);
-		    
-		    
+
+
 		    if (retCode != ACSModule.SCARD_S_SUCCESS)
 		    {
-		    	
+
 		    	displayOut(1, retCode, "");
-		    	
+
 		    }
 		    else
 		    {
-		    	
+
 		    	//2. Format ATRVal returned and display string as ATR value
 		    	//tmpStr = "ATR Length: " & CInt(ATRLen)
 		    	String strHex;
 		    	tmpStr = "ATR Length: " + ATRLen[0];
 		    	displayOut(3, 0, tmpStr);
 		    	tmpStr = "ATR Value: ";
-		    	
+
 		    	for(int i=0; i<ATRLen[0]; i++)
 		    	{
-		    		
+
 		    		//Byte to Hex conversion
-					strHex = Integer.toHexString(((Byte)ATRVal[i]).intValue() & 0xFF).toUpperCase();  
-					
+					strHex = Integer.toHexString(((Byte)ATRVal[i]).intValue() & 0xFF).toUpperCase();
+
 					//For single character hex
-					if (strHex.length() == 1) 
+					if (strHex.length() == 1)
 						strHex = "0" + strHex;
-					
-					tmpStr += " " + strHex;  
-					
+
+					tmpStr += " " + strHex;
+
 					//new line every 12 bytes
-					if ( ((i+1) % 12 == 0) && ( (i+1) < ATRLen[0] ) )  
-						tmpStr += "\n  ";	
-					
+					if ( ((i+1) % 12 == 0) && ( (i+1) < ATRLen[0] ) )
+						tmpStr += "\n  ";
+
 		    	}
-		    	
+
 		    	displayOut(3 , 0, tmpStr);
-		    	
+
 		    	//3. Interpret dwActProtocol returned and display as active protocol
 		    	tmpStr = "Active Protocol: ";
-		    	
+
 		    	switch(PrefProtocols[0])
 		    	{
-		    	
+
 		    		case 1: tmpStr = tmpStr + "T=0"; break;
 		    		case 2:
 		    		{
 		    			if (((String) rdrName.getSelectedItem()).lastIndexOf("ACR128U PICC")> -1)
-		    				tmpStr = tmpStr + "T=CL"; 
+		    				tmpStr = tmpStr + "T=CL";
 		    			else
-		    				tmpStr = tmpStr + "T=1"; 
-		    			
+		    				tmpStr = tmpStr + "T=1";
+
 		    			break;
 		    		}
 		    		default: tmpStr = "No protocol is defined."; break;
-		    	
+
 		    	}
-		    	
+
 		    	displayOut(3, 0, tmpStr);
 		    	interpretATR();
-		    	
+
 		    }
-		    
+
 		}
-		
+
 		if (bClear == e.getSource())
 		{
-	
+
 			Msg.setText("");
-			
+
 		}
-		
+
 		if(bQuit == e.getSource())
 		{
-			
+
 			this.dispose();
-			
+
 		}
     }
-    
+
 	public void displayOut(int mType, int msgCode, String printText)
 	{
 
 		switch(mType)
 		{
-		
-			case 1: 
+
+			case 1:
 				{
-					
+
 					Msg.append("! " + printText);
 					Msg.append(ACSModule.GetScardErrMsg(msgCode) + "\n");
 					break;
-					
+
 				}
 			case 2: Msg.append("< " + printText + "\n");break;
 			case 3: Msg.append("> " + printText + "\n");break;
 			default: Msg.append("- " + printText + "\n");
-		
+
 		}
-		
+
 	}
-	
+
 	public void interpretATR()
 	{
-		
+
 		String RIDVal, cardName;
 		cardName= "";
-		
+
 		//4. Interpret ATR and guess card
 	    // 4.1. Mifare cards using ISO 14443 Part 3 Supplemental Document
 		if (ATRLen[0]>14){
-			
+
 			RIDVal = "";
 			for(int i=7; i<11; i++)
 			{
-				
+
 				RIDVal = RIDVal + Integer.toHexString(((Byte)ATRVal[i]).intValue() & 0xFF).toUpperCase();
-				
+
 			}
-			
+
 				if (RIDVal.equals("A0003"))
 				{
-					
-				
+
+
 					cardName = "";
-					
+
 					switch(ATRVal[12])
 					{
-					
+
 						case 0: cardName = "No card information"; break;
 						case 1: cardName = "ISO 14443 A, Part1 Card Type"; break;
 						case 2: cardName = "ISO 14443 A, Part2 Card Type"; break;
@@ -526,11 +525,11 @@ public class GetATR extends JFrame implements ActionListener{
 						case 15: cardName = "Contact Card (7816-10) 2WBP Card Type"; break;
 						case 16: cardName = "Contact Card (7816-10) 3WBP Card Type"; break;
 						default: cardName = "Undefined card"; break;
-					
+
 					}
-					
+
 				}
-				
+
 				if (Integer.toHexString(((Byte)ATRVal[12]).intValue() & 0xFF).equals("3"))
 	            {
 					  //if(ATRVal[13]==0xF0)
@@ -548,19 +547,19 @@ public class GetATR extends JFrame implements ActionListener{
 	                             cardName = cardName + ": Topaz";
 	                             break;
 
-	                       }	      	                        
+	                       }
 	                     //}
 	            }
-				
+
 				if (Integer.toHexString(((Byte)ATRVal[12]).intValue() & 0xFF).equals("3"))
 				{
-					
+
 					if(Integer.toHexString(((Byte)ATRVal[13]).intValue() & 0xFF).equals("0"))
 					{
-					
+
 						switch(ATRVal[14])
 						{
-						
+
 							case 0x01: cardName = cardName + ": Mifare Standard 1K"; break;
 	                        case 0x02: cardName = cardName + ": Mifare Standard 4K"; break;
 	                        case 0x03: cardName = cardName + ": Mifare Ultra light"; break;
@@ -598,98 +597,98 @@ public class GetATR extends JFrame implements ActionListener{
 	                        case 0x24: cardName = cardName + ": LRI12";break;
 	                        case 0x25: cardName = cardName + ": LRI128";break;
 	                        case 0x26: cardName = cardName + ": Mifare Mini";break;
-						
+
 						}
-						
+
 					}
 					else
 					{
-						
+
 						if (ATRVal[13]==0xFF)
 						//if(Integer.toHexString(((Byte)ATRVal[13]).intValue() & 0xFF).equals("256"))
 						{
-							
+
 							switch(ATRVal[14])
 							{
-							
+
 								case 9: cardName = cardName + ": Mifare Mini"; break;
-							
+
 							}
-							
+
 						}
-						
+
 					}
-					
+
 					displayOut(3, 0, cardName + " is detected.");
-					
+
 				}
-		
+
 		}
-		
+
 		if(ATRLen[0] ==11)
 		{
-			
+
 			RIDVal = "";
-			
+
 			for(int i=4; i<9; i++)
 			{
-				
+
 				RIDVal = RIDVal + Integer.toHexString(((Byte)ATRVal[i]).intValue() & 0xFF);
-				
+
 			}
-	
-			
+
+
 			if (RIDVal.equals("67577812"))
 			{
-	
+
 				displayOut(3, 0, "Mifare DESFire is detected.");
-				
+
 			}
-			
+
 		}
-		
+
 		if(ATRLen[0] ==17)
 		{
-			
+
 			RIDVal = "";
-			
+
 			for(int i=4; i<15; i++)
 			{
-				
+
 				RIDVal = RIDVal + Integer.toHexString(((Byte)ATRVal[i]).intValue() & 0xFF);
-				
+
 			}
-			
+
 			if (RIDVal.equals("50122345561253544E3381C3"))
 			{
-				
-				displayOut(3, 0, "ST19XRC8E is detected.");
-				
-			}
-			
-		}
-		
-		
-	}
-	
 
-	
+				displayOut(3, 0, "ST19XRC8E is detected.");
+
+			}
+
+		}
+
+
+	}
+
+
+
 	public void initMenu()
 	{
-	
+
 		connActive = false;
 		bConn.setEnabled(false);
 		bGetATR.setEnabled(false);
 		bReset.setEnabled(false);
 		bInit.setEnabled(true);
 		displayOut(0, 0, "Program Ready");
-		
+
 	}
-	
 
-	
 
-    
+
+
+
     public static void main(String args[]) {
         EventQueue.invokeLater(new Runnable() {
             public void run() {

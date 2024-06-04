@@ -14,28 +14,26 @@
   Revision Trail:   (Date/Author/Description)
 
 ======================================================================*/
-
-import java.io.*;
-import java.awt.*;
-import java.awt.event.*;
+package com.github.lenope1214.sample;
 
 import javax.swing.*;
-import javax.swing.filechooser.*;
-import javax.swing.filechooser.FileFilter;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class ActiveSample extends JFrame implements ActionListener{
 
 	//JPCSC Variables
-	int retCode;	
-	
+	int retCode;
+
 	//All variables that requires pass-by-reference calls to functions are
 	//declared as 'Array of int' with length 1
 	//Java does not process pass-by-ref to int-type variables, thus Array of int was used.
-	
-	 int [] hContext = new int[1]; 
+
+	 int [] hContext = new int[1];
 	 int [] cchReaders = new int[1];
 	 int [] hCard = new int[1];
-	 int [] PrefProtocols = new int[1]; 		
+	 int [] PrefProtocols = new int[1];
 	 int [] RecvLen = new int [1];
 	 int SendLen = 0;
 	 int [] nBytesRet = new int[1];
@@ -43,7 +41,7 @@ public class ActiveSample extends JFrame implements ActionListener{
 	 byte [] RecvBuff = new byte[300];
 	 byte [] ATRVal = new byte[128];
 	 byte [] szReaders = new byte[1024];
-	
+
 	 private JButton bActive;
 	 private JButton bClear;
 	 private JButton bConnect;
@@ -56,10 +54,10 @@ public class ActiveSample extends JFrame implements ActionListener{
 	 private JTextArea mMsg;
 	 private JTextField tbData;
 	 static JacspcscLoader jacs = new JacspcscLoader();
-    
+
 
     public ActiveSample() {
-    	
+
     	this.setTitle("Active Device Sample");
     	this.setLocation(600,100);
         initComponents();
@@ -83,13 +81,13 @@ public class ActiveSample extends JFrame implements ActionListener{
    		bClear = new JButton();
    		bDisconnect = new JButton();
    		tbData = new JTextField();
-   		
+
         lblSelect.setText("Select Reader");
 
-        String[] rdrNameDef = {"Please select reader                   "};	
+        String[] rdrNameDef = {"Please select reader                   "};
 		cbReader = new JComboBox(rdrNameDef);
 		cbReader.setSelectedIndex(0);
-		
+
         bInitialize.setText("Initialize");
         bConnect.setText("Connect");
 
@@ -161,150 +159,150 @@ public class ActiveSample extends JFrame implements ActionListener{
                         .addComponent(bQuit)))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
-        
+
         bInitialize.addActionListener(this);
         bConnect.addActionListener(this);
         bActive.addActionListener(this);
         bClear.addActionListener(this);
         bDisconnect.addActionListener(this);
         bQuit.addActionListener(this);
-        
+
     }
 
     public void actionPerformed(ActionEvent e) {
-    	
+
 		if(bInitialize == e.getSource())
 		{
-			
+
 			//1. Establish context and obtain hContext handle
 			retCode = jacs.jSCardEstablishContext(ACSModule.SCARD_SCOPE_USER, 0, 0, hContext);
-		    
+
 			if (retCode != ACSModule.SCARD_S_SUCCESS)
 		    {
-		    
+
 				mMsg.append("Calling SCardEstablishContext...FAILED\n");
 		      	//displayOut(1, retCode, "");
-		      	
+
 		    }
-			
+
 			//2. List PC/SC card readers installed in the system
 			retCode = jacs.jSCardListReaders(hContext, 0, szReaders, cchReaders);
 
 			int offset = 0;
 			cbReader.removeAllItems();
-			
+
 			for (int i = 0; i < cchReaders[0]-1; i++)
 			{
-				
+
 			  	if (szReaders[i] == 0x00)
-			  	{			  		
-			  		
+			  	{
+
 			  		cbReader.addItem(new String(szReaders, offset, i - offset));
 			  		offset = i+1;
-			  		
+
 			  	}
 			}
-			
+
 			if (cbReader.getItemCount() == 0)
 			{
-			
+
 				cbReader.addItem("No PC/SC reader detected");
-				
+
 			}
-			
+
 			bConnect.setEnabled(true);
 			bInitialize.setEnabled(false);
 			bDisconnect.setEnabled(true);
 		}
-		
+
 		if(bQuit == e.getSource())
 		{
-			
+
 			this.dispose();
-			
+
 		}
-		
+
 
 		if(bConnect == e.getSource())
 		{
-			
-		
-			String rdrcon = (String)cbReader.getSelectedItem();  	      	      	
-		    
-		    retCode = jacs.jSCardConnect(hContext, 
-		    							rdrcon, 
+
+
+			String rdrcon = (String)cbReader.getSelectedItem();
+
+		    retCode = jacs.jSCardConnect(hContext,
+		    							rdrcon,
 		    							ACSModule.SCARD_SHARE_SHARED,
 		    							ACSModule.SCARD_PROTOCOL_T1,
-		      							hCard, 
+		      							hCard,
 		      							PrefProtocols);
-		    
+
 		    if (retCode != ACSModule.SCARD_S_SUCCESS)
 		    {
-		      	
-					
-		    		retCode = jacs.jSCardConnect(hContext, 
-		    									rdrcon, 
+
+
+		    		retCode = jacs.jSCardConnect(hContext,
+		    									rdrcon,
 		    									ACSModule.SCARD_SHARE_DIRECT,
 		    									0,
-		    									hCard, 
+		    									hCard,
 		    									PrefProtocols);
-		    		
+
 		    		if (retCode != ACSModule.SCARD_S_SUCCESS)
 				    {
-		    			
-		    			displayOut(1, retCode, "");		    			
+
+		    			displayOut(1, retCode, "");
 		    			return;
-		    			
+
 				    }
 		    		else
 		    		{
-		    			
+
 		    			displayOut(0, 0, "Successful connection to " + (String)cbReader.getSelectedItem());
-		    			
+
 		    		}
-									
-		    
-		    } 
-		    else 
-		    {	      	      
-		      	
+
+
+		    }
+		    else
+		    {
+
 		    	displayOut(0, 0, "Successful connection to " + (String)cbReader.getSelectedItem());
-		      	
+
 		    }
 		    GetFirmware();
-			
+
 		}
-		
+
 		if (bClear == e.getSource())
 		{
 			mMsg.setText("");
 		}
-		
+
 		if (bDisconnect == e.getSource())
 		{
-		
+
 			retCode = jacs.jSCardDisconnect(hCard, ACSModule.SCARD_UNPOWER_CARD);
-		
-		    
+
+
 			//release context
 			retCode = jacs.jSCardReleaseContext(hContext);
 			//System.exit(0);
-			
+
 			mMsg.setText("");
 			initMenu();
 			cbReader.removeAllItems();
 			cbReader.addItem("Please select reader                   ");
-			
+
 		}
-		
+
 		if (bActive == e.getSource())
 		{
-			
+
 			SetActive();
-			
+
 		}
     }
-    
+
 	  private void GetFirmware()
       {
 
@@ -323,7 +321,7 @@ public class ActiveSample extends JFrame implements ActionListener{
 
           retCode = CardControl();
 
-      	if (retCode != ACSModule.SCARD_S_SUCCESS)		
+      	if (retCode != ACSModule.SCARD_S_SUCCESS)
           {
 
               return;
@@ -336,7 +334,7 @@ public class ActiveSample extends JFrame implements ActionListener{
 
           for (index = 0; index <= RecvLen[0]; index++)
           {
-             
+
             	  tmpStr = tmpStr + (char)(RecvBuff[index]);
 
           }
@@ -345,12 +343,12 @@ public class ActiveSample extends JFrame implements ActionListener{
       }
 
 
-	
+
 	  public void SetActive()
       {
 
           ClearBuffers();
-          
+
           SendBuff[0] = (byte)0xFF;
           SendBuff[1] = (byte)0x00;
           SendBuff[2] = (byte)0x00;
@@ -366,20 +364,20 @@ public class ActiveSample extends JFrame implements ActionListener{
           SendBuff[12] = (byte)0xFF;
           SendBuff[13] = (byte)0x00;
           SendBuff[14] = (byte)0x00;
-          
+
           SendLen = 15;
           RecvLen[0] = 21;
 
 
           retCode = CardControl();
-      	
-  		if (retCode != ACSModule.SCARD_S_SUCCESS)		         
+
+  		if (retCode != ACSModule.SCARD_S_SUCCESS)
               return;
-  		
+
           sending();
-      
+
       }
-	  
+
 	  public void sending()
       {
           char[] tempdata = new char[513];
@@ -392,8 +390,8 @@ public class ActiveSample extends JFrame implements ActionListener{
           //Transfer string data to a char array
           //and determine its length
           data = tbData.getText();
-          datalen = data.length();   
-         
+          datalen = data.length();
+
 
           //Send the length of the data first
           //so that the receiving device would
@@ -415,7 +413,7 @@ public class ActiveSample extends JFrame implements ActionListener{
           RecvLen[0] = 7;
 
           retCode = CardControl();
-        	if (retCode != ACSModule.SCARD_S_SUCCESS)		
+        	if (retCode != ACSModule.SCARD_S_SUCCESS)
           {
               return;
           }
@@ -425,11 +423,11 @@ public class ActiveSample extends JFrame implements ActionListener{
           SendBuff[0] = (byte)0xFF;
           SendBuff[1] = (byte)0x00;
           SendBuff[2] = (byte)0x00;
-          SendBuff[3] = (byte)0x00;         
+          SendBuff[3] = (byte)0x00;
           SendBuff[4] = (byte)(datalen);
           SendBuff[5] = (byte)0xD4;
           SendBuff[6] = (byte)0x40;
-          SendBuff[7] = (byte)0x01;        
+          SendBuff[7] = (byte)0x01;
 
           for (index = 0; index <= datalen - 1 ; index++)
           {
@@ -441,13 +439,13 @@ public class ActiveSample extends JFrame implements ActionListener{
           RecvLen[0] = 7;
 
           retCode = CardControl();
-        	if (retCode != ACSModule.SCARD_S_SUCCESS)		
+        	if (retCode != ACSModule.SCARD_S_SUCCESS)
           {
               displayOut(2,retCode,"");
               return;
           }
       }
-  
+
 
 
 	  public int CardControl()
@@ -459,16 +457,16 @@ public class ActiveSample extends JFrame implements ActionListener{
           for (index = 0; index < SendLen; index++)
           {
                tempstr = tempstr + " " +  Integer.toHexString(((Byte)SendBuff[index]).intValue() & 0xFF).toUpperCase();
-  			
+
           }
 
           displayOut(2,0,tempstr);
-          
+
           retCode = jacs.jSCardControl(hCard, (int)ACSModule.IOCTL_CCID_ESCAPE_SCARD_CTL_CODE, SendBuff, SendLen, RecvBuff, RecvLen, nBytesRet);
 
-          if (retCode != ACSModule.SCARD_S_SUCCESS)	          
+          if (retCode != ACSModule.SCARD_S_SUCCESS)
           {
-              
+
               displayOut(2, retCode, "");
               return retCode;
           }
@@ -479,63 +477,63 @@ public class ActiveSample extends JFrame implements ActionListener{
           {
               tempstr = tempstr + " " + Integer.toHexString(((Byte)RecvBuff[index]).intValue() & 0xFF).toUpperCase();
           }
-   
+
           displayOut(3, 0, tempstr);
 
           return retCode;
 
       }
-	
+
 	public void displayOut(int mType, int msgCode, String printText)
 	{
 
 		switch(mType)
 		{
-		
-			case 1: 
+
+			case 1:
 				{
-					
+
 					mMsg.append("! " + printText);
 					mMsg.append(ACSModule.GetScardErrMsg(msgCode) + "\n");
 					break;
-					
+
 				}
 			case 2: mMsg.append("< " + printText + "\n");break;
 			case 3: mMsg.append("> " + printText + "\n");break;
 			default: mMsg.append("- " + printText + "\n");
-		
+
 		}
-		
+
 	}
 
-	
+
 	public void ClearBuffers()
 	{
-		
+
 		for(int i=0; i<262; i++)
 		{
-			
+
 			SendBuff[i]=(byte) 0x00;
 			RecvBuff[i]= (byte) 0x00;
-			
-		}
-		
-	}
-	
 
-	
+		}
+
+	}
+
+
+
 	public void initMenu()
 	{
-	
-		bConnect.setEnabled(false);	
+
+		bConnect.setEnabled(false);
 		bDisconnect.setEnabled(false);
 		bInitialize.setEnabled(true);
 		displayOut(0, 0, "Program Ready");
-		
-	}
-	
 
-	
+	}
+
+
+
     public static void main(String args[]) {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
